@@ -9,23 +9,31 @@ using HotChocolate.Data;
 public class Mutation
 {
     [UseDbContext(typeof(AppDbContext))]
-    public async Task<User> AddUser(UserInput input, [Service] AppDbContext context)
+    public async Task<User> AddUser(UserInput input, [ScopedService] AppDbContext context)
     {
-        var user = new User
+        try
         {
-            Name = input.Name,
-            Email = input.Email,
-            Phone = input.Phone,
-            Role = input.Role
-        };
+            var user = new User
+            {
+                Name = input.Name,
+                Email = input.Email,
+                Phone = input.Phone,
+                Role = input.Role
+            };
 
-        context.Users.Add(user);
-        await context.SaveChangesAsync();
-        return user;
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+            return user;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Greška u AddUser: {ex}");
+            throw new GraphQLException($"Greška prilikom spremanja korisnika: {ex.Message}");
+        }
     }
 
     [UseDbContext(typeof(AppDbContext))]
-    public async Task<Service> AddService(ServiceInput input, [Service] AppDbContext context)
+    public async Task<Service> AddService(ServiceInput input, [ScopedService] AppDbContext context)
     {
         var service = new Service
         {
@@ -41,7 +49,7 @@ public class Mutation
     }
 
     [UseDbContext(typeof(AppDbContext))]
-    public async Task<Reservation> AddReservation(ReservationInput input, [Service] AppDbContext context)
+    public async Task<Reservation> AddReservation(ReservationInput input, [ScopedService] AppDbContext context)
     {
         var reservation = new Reservation
         {
@@ -56,7 +64,7 @@ public class Mutation
     }
 
     [UseDbContext(typeof(AppDbContext))]
-    public async Task<UnavailableDay> AddUnavailableDay(UnavailableDayInput input, [Service] AppDbContext context)
+    public async Task<UnavailableDay> AddUnavailableDay(UnavailableDayInput input, [ScopedService] AppDbContext context)
     {
         var unavailableDay = new UnavailableDay
         {

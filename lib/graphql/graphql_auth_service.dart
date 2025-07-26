@@ -7,7 +7,7 @@ final GraphQLClient client = GraphQLClient(
   cache: GraphQLCache(),
 );
 
-Future<String> signUpWithGraphQL({
+Future<int> signUpWithGraphQL({
   required String name,
   required String email,
   required String phone,

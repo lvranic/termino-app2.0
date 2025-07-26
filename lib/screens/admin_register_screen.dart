@@ -50,7 +50,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
         role: 'admin',
       );
 
-      if (adminId.isEmpty) {
+      if (adminId == 0) {
         throw Exception('Greška: nije vraćen ID korisnika.');
       }
 
