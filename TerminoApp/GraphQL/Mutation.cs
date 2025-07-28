@@ -5,36 +5,35 @@ using TerminoApp.GraphQL.Inputs;
 using TerminoApp.Models;
 using HotChocolate;
 using HotChocolate.Data;
+using Microsoft.EntityFrameworkCore;
+#nullable enable
 
 public class Mutation
 {
     [UseDbContext(typeof(AppDbContext))]
-    public async Task<User> AddUser(UserInput input, [ScopedService] AppDbContext context)
+    public async Task<User> AddUser(UserInput input, [Service] IDbContextFactory<AppDbContext> contextFactory)
     {
-        try
-        {
-            var user = new User
-            {
-                Name = input.Name,
-                Email = input.Email,
-                Phone = input.Phone,
-                Role = input.Role
-            };
+        await using var context = await contextFactory.CreateDbContextAsync();
 
-            context.Users.Add(user);
-            await context.SaveChangesAsync();
-            return user;
-        }
-        catch (Exception ex)
+        var user = new User
         {
-            Console.WriteLine($"❌ Greška u AddUser: {ex}");
-            throw new GraphQLException($"Greška prilikom spremanja korisnika: {ex.Message}");
-        }
+            Name = input.Name,
+            Email = input.Email,
+            Phone = input.Phone,
+            Role = input.Role,
+            Password = input.Password
+        };
+
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+        return user;
     }
 
     [UseDbContext(typeof(AppDbContext))]
-    public async Task<Service> AddService(ServiceInput input, [ScopedService] AppDbContext context)
+    public async Task<Service> AddService(ServiceInput input, [Service] IDbContextFactory<AppDbContext> contextFactory)
     {
+        await using var context = await contextFactory.CreateDbContextAsync();
+
         var service = new Service
         {
             Name = input.Name,
@@ -49,8 +48,10 @@ public class Mutation
     }
 
     [UseDbContext(typeof(AppDbContext))]
-    public async Task<Reservation> AddReservation(ReservationInput input, [ScopedService] AppDbContext context)
+    public async Task<Reservation> AddReservation(ReservationInput input, [Service] IDbContextFactory<AppDbContext> contextFactory)
     {
+        await using var context = await contextFactory.CreateDbContextAsync();
+
         var reservation = new Reservation
         {
             UserId = input.UserId,
@@ -64,8 +65,10 @@ public class Mutation
     }
 
     [UseDbContext(typeof(AppDbContext))]
-    public async Task<UnavailableDay> AddUnavailableDay(UnavailableDayInput input, [ScopedService] AppDbContext context)
+    public async Task<UnavailableDay> AddUnavailableDay(UnavailableDayInput input, [Service] IDbContextFactory<AppDbContext> contextFactory)
     {
+        await using var context = await contextFactory.CreateDbContextAsync();
+
         var unavailableDay = new UnavailableDay
         {
             Date = input.Date

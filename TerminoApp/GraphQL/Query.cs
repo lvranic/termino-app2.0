@@ -1,35 +1,41 @@
 using TerminoApp.Data;
 using TerminoApp.Models;
 using HotChocolate;
-using HotChocolate.Data;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
+#nullable enable
 
 public class Query
 {
-    [UseDbContext(typeof(AppDbContext))]
-    public async Task<List<User>> GetUsers([Service] AppDbContext context) =>
-        await Task.FromResult(context.Users.ToList());
-
-    [UseDbContext(typeof(AppDbContext))]
-    public async Task<List<Service>> GetServices([Service] AppDbContext context) =>
-        await Task.FromResult(context.Services.ToList());
-
-    [UseDbContext(typeof(AppDbContext))]
-    public async Task<List<Reservation>> GetReservations([Service] AppDbContext context) =>
-        await Task.FromResult(context.Reservations.ToList());
-
-    [UseDbContext(typeof(AppDbContext))]
-    public async Task<List<UnavailableDay>> GetUnavailableDays([Service] AppDbContext context) =>
-        await Task.FromResult(context.UnavailableDays.ToList());
-
-    // ✅ Dodano ispravno unutar klase
-    [UseDbContext(typeof(AppDbContext))]
-    public async Task<User?> Login(string email, string password, [Service] AppDbContext context)
+    public async Task<List<User>> GetUsers([Service] IDbContextFactory<AppDbContext> contextFactory)
     {
-        return await Task.FromResult(
-            context.Users.FirstOrDefault(u => u.Email == email && u.Password == password)
-        );
+        using var context = contextFactory.CreateDbContext();
+        return await context.Users.ToListAsync();
+    }
+
+    public async Task<List<Service>> GetServices([Service] IDbContextFactory<AppDbContext> contextFactory)
+    {
+        using var context = contextFactory.CreateDbContext();
+        return await context.Services.ToListAsync();
+    }
+
+    public async Task<List<Reservation>> GetReservations([Service] IDbContextFactory<AppDbContext> contextFactory)
+    {
+        using var context = contextFactory.CreateDbContext();
+        return await context.Reservations.ToListAsync();
+    }
+
+    public async Task<List<UnavailableDay>> GetUnavailableDays([Service] IDbContextFactory<AppDbContext> contextFactory)
+    {
+        using var context = contextFactory.CreateDbContext();
+        return await context.UnavailableDays.ToListAsync();
+    }
+
+    public async Task<User?> Login(string email, string password, [Service] IDbContextFactory<AppDbContext> contextFactory)
+    {
+        using var context = contextFactory.CreateDbContext();
+        return await context.Users.FirstOrDefaultAsync(u => u.Email == email && u.Password == password);
     }
 }
