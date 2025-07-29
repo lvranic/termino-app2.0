@@ -1,81 +1,89 @@
-using System;
 using System.Threading.Tasks;
-using TerminoApp.Data;
-using TerminoApp.GraphQL.Inputs;
-using TerminoApp.Models;
-using HotChocolate;
-using HotChocolate.Data;
 using Microsoft.EntityFrameworkCore;
+using HotChocolate;
+using HotChocolate.Types;
+using TerminoApp.Data;
+using TerminoApp.Models;
+using TerminoApp.GraphQL.Inputs;
+
 #nullable enable
 
-public class Mutation
+namespace TerminoApp.GraphQL
 {
-    [UseDbContext(typeof(AppDbContext))]
-    public async Task<User> AddUser(UserInput input, [Service] IDbContextFactory<AppDbContext> contextFactory)
+    public class Mutation
     {
-        await using var context = await contextFactory.CreateDbContextAsync();
-
-        var user = new User
+        public async Task<User> AddUser(
+            [GraphQLName("input")] UserInput input,
+            [Service] IDbContextFactory<AppDbContext> dbContextFactory)
         {
-            Name = input.Name,
-            Email = input.Email,
-            Phone = input.Phone,
-            Role = input.Role,
-            Password = input.Password
-        };
+            await using var context = await dbContextFactory.CreateDbContextAsync();
 
-        context.Users.Add(user);
-        await context.SaveChangesAsync();
-        return user;
-    }
+            var user = new User
+            {
+                Name = input.Name,
+                Email = input.Email,
+                Phone = input.Phone,
+                Role = input.Role,
+                Password = input.Password
+            };
 
-    [UseDbContext(typeof(AppDbContext))]
-    public async Task<Service> AddService(ServiceInput input, [Service] IDbContextFactory<AppDbContext> contextFactory)
-    {
-        await using var context = await contextFactory.CreateDbContextAsync();
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+            return user;
+        }
 
-        var service = new Service
+        public async Task<Service> AddService(
+            [GraphQLName("input")] ServiceInput input,
+            [Service] IDbContextFactory<AppDbContext> dbContextFactory)
         {
-            Name = input.Name,
-            Description = input.Description,
-            DurationMinutes = input.DurationMinutes,
-            Price = input.Price
-        };
+            await using var context = await dbContextFactory.CreateDbContextAsync();
 
-        context.Services.Add(service);
-        await context.SaveChangesAsync();
-        return service;
-    }
+            var service = new Service
+            {
+                Name = input.Name,
+                Description = input.Description,
+                Address = input.Address,
+                WorkingHours = input.WorkingHours,
+                AdminId = input.AdminId
+            };
 
-    [UseDbContext(typeof(AppDbContext))]
-    public async Task<Reservation> AddReservation(ReservationInput input, [Service] IDbContextFactory<AppDbContext> contextFactory)
-    {
-        await using var context = await contextFactory.CreateDbContextAsync();
+            context.Services.Add(service);
+            await context.SaveChangesAsync();
+            return service;
+        }
 
-        var reservation = new Reservation
+        public async Task<Reservation> AddReservation(
+            [GraphQLName("input")] ReservationInput input,
+            [Service] IDbContextFactory<AppDbContext> dbContextFactory)
         {
-            UserId = input.UserId,
-            ServiceId = input.ServiceId,
-            DateTime = input.DateTime
-        };
+            await using var context = await dbContextFactory.CreateDbContextAsync();
 
-        context.Reservations.Add(reservation);
-        await context.SaveChangesAsync();
-        return reservation;
-    }
+            var reservation = new Reservation
+            {
+                UserId = input.UserId,
+                ServiceId = input.ServiceId,
+                DateTime = input.DateTime
+            };
 
-    [UseDbContext(typeof(AppDbContext))]
-    public async Task<UnavailableDay> AddUnavailableDay(UnavailableDayInput input, [Service] IDbContextFactory<AppDbContext> contextFactory)
-    {
-        await using var context = await contextFactory.CreateDbContextAsync();
+            context.Reservations.Add(reservation);
+            await context.SaveChangesAsync();
+            return reservation;
+        }
 
-        var unavailableDay = new UnavailableDay
+        public async Task<UnavailableDay> AddUnavailableDay(
+            [GraphQLName("input")] UnavailableDayInput input,
+            [Service] IDbContextFactory<AppDbContext> dbContextFactory)
         {
-            Date = input.Date
-        };
+            await using var context = await dbContextFactory.CreateDbContextAsync();
 
-        context.UnavailableDays.Add(unavailableDay);
-        await context.SaveChangesAsync();
-        return unavailableDay;
+            var unavailableDay = new UnavailableDay
+            {
+                Date = input.Date
+            };
+
+            context.UnavailableDays.Add(unavailableDay);
+            await context.SaveChangesAsync();
+            return unavailableDay;
+        }
     }
 }

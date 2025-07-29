@@ -8,25 +8,21 @@ using TerminoApp.GraphQL;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-
+// Koristi PooledDbContextFactory jer koristiš [UseDbContext]
 builder.Services.AddPooledDbContextFactory<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// GraphQL konfiguracija
 builder.Services
     .AddGraphQLServer()
     .AddQueryType<Query>()
     .AddMutationType<Mutation>()
-    .ModifyRequestOptions(opt => opt.IncludeExceptionDetails = true);
+    .AddFiltering()
+    .AddSorting()
+    .ModifyRequestOptions(opt => opt.IncludeExceptionDetails = true); // za debugging
 
 var app = builder.Build();
 
-app.UseRouting();
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapControllers();
-});
-
-app.MapGraphQL();
+app.MapGraphQL(); // GraphQL endpoint
 
 app.Run();
