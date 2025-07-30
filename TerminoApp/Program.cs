@@ -8,12 +8,13 @@ using TerminoApp.GraphQL;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using TerminoApp.Services; // ✅ OVO DODAJ
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<JwtService>(); // ✅ scoped je bolji izbor
 
-// Koristi PooledDbContextFactory jer koristiš [UseDbContext]
 builder.Services.AddPooledDbContextFactory<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -36,19 +37,18 @@ builder.Services.AddAuthentication("Bearer")
 
 builder.Services.AddAuthorization();
 
-// GraphQL konfiguracija
 builder.Services
     .AddGraphQLServer()
     .AddQueryType<Query>()
     .AddMutationType<Mutation>()
     .AddFiltering()
     .AddSorting()
-    .ModifyRequestOptions(opt => opt.IncludeExceptionDetails = true); // za debugging
+    .ModifyRequestOptions(opt => opt.IncludeExceptionDetails = true); // debugging
 
 var app = builder.Build();
 
-app.MapGraphQL(); // GraphQL endpoint
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapGraphQL();
 
 app.Run();
