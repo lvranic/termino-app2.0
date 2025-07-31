@@ -6,8 +6,10 @@ using HotChocolate.Types;
 using TerminoApp.Data;
 using TerminoApp.Models;
 using TerminoApp.GraphQL.Inputs;
-using TerminoApp.Services; // Ispravljen namespace!
+using TerminoApp.Services;
 using Microsoft.AspNetCore.Http;
+using System.Linq;
+using System.Security.Claims;
 
 #nullable enable
 
@@ -21,6 +23,12 @@ namespace TerminoApp.GraphQL
         {
             await using var context = await dbContextFactory.CreateDbContextAsync();
 
+            var existingUser = await context.Users.FirstOrDefaultAsync(u => u.Email == input.Email);
+            if (existingUser != null)
+            {
+                throw new GraphQLException("Korisnik s tim emailom već postoji.");
+            }
+
             var user = new User
             {
                 Name = input.Name,
@@ -30,14 +38,8 @@ namespace TerminoApp.GraphQL
                 Password = input.Password
             };
 
-            Console.WriteLine($"🟡 Pripremljen korisnik: {user.Name} ({user.Email})");
-
             await context.Users.AddAsync(user);
-            Console.WriteLine("🟢 Dodan u context.Users");
-
             await context.SaveChangesAsync();
-            Console.WriteLine("✅ Spremljen u bazu!");
-
             return user;
         }
 
@@ -49,7 +51,15 @@ namespace TerminoApp.GraphQL
             var httpContext = contextAccessor.HttpContext;
             var userClaims = httpContext?.User;
 
-            if (userClaims == null || !(userClaims.Identity?.IsAuthenticated ?? false) || userClaims.FindFirst("role")?.Value != "admin")
+            Console.WriteLine("🔐 IsAuthenticated: " + userClaims?.Identity?.IsAuthenticated);
+            foreach (var claim in userClaims?.Claims ?? Enumerable.Empty<Claim>())
+            {
+                Console.WriteLine($"🧩 Claim: {claim.Type} = {claim.Value}");
+            }
+
+            if (userClaims == null ||
+                !(userClaims.Identity?.IsAuthenticated ?? false) ||
+                userClaims.FindFirst(ClaimTypes.Role)?.Value != "admin")
             {
                 throw new GraphQLException("Nemate dopuštenje za ovu operaciju.");
             }
@@ -70,7 +80,8 @@ namespace TerminoApp.GraphQL
                 Description = input.Description,
                 Address = input.Address,
                 WorkingHours = input.WorkingHours,
-                AdminId = input.AdminId
+                AdminId = input.AdminId,
+                DurationInMinutes = input.DurationInMinutes
             };
 
             context.Services.Add(service);
@@ -103,6 +114,27 @@ namespace TerminoApp.GraphQL
             [Service] IDbContextFactory<AppDbContext> dbContextFactory)
         {
             await using var context = await dbContextFactory.CreateDbContextAsync();
+
+            var service = await context.Services.FirstOrDefaultAsync(s => s.Id == input.ServiceId);
+            if (service == null)
+            {
+                throw new Exception("Usluga ne postoji.");
+            }
+
+            var trajanje = TimeSpan.FromMinutes(service.DurationInMinutes);
+            var noviPocetak = input.DateTime;
+            var noviKraj = input.DateTime.Add(trajanje);
+
+            var preklapanje = await context.Reservations
+                .Where(r => r.ServiceId == input.ServiceId)
+                .AnyAsync(r =>
+                    input.DateTime < r.DateTime.AddMinutes(service.DurationInMinutes) &&
+                    noviKraj > r.DateTime);
+
+            if (preklapanje)
+            {
+                throw new GraphQLException("Termin se preklapa s postojećom rezervacijom.");
+            }
 
             var reservation = new Reservation
             {

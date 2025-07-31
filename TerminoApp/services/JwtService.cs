@@ -10,11 +10,17 @@ namespace TerminoApp.Services
 {
     public class JwtService
     {
-        private readonly IConfiguration _configuration;
+        private readonly string _key;
+        private readonly string _issuer;
+        private readonly string _audience;
+        private readonly int _expiresInMinutes;
 
         public JwtService(IConfiguration configuration)
         {
-            _configuration = configuration;
+            _key = configuration["JwtSettings:Key"]!;
+            _issuer = configuration["JwtSettings:Issuer"]!;
+            _audience = configuration["JwtSettings:Audience"]!;
+            _expiresInMinutes = int.Parse(configuration["JwtSettings:ExpiresInMinutes"]!);
         }
 
         public string GenerateToken(User user)
@@ -23,18 +29,21 @@ namespace TerminoApp.Services
             {
                 new Claim("id", user.Id.ToString()),
                 new Claim("email", user.Email),
-                new Claim("role", user.Role)
+                new Claim("role", user.Role),
+                new Claim(JwtRegisteredClaimNames.Iss, _issuer),
+                new Claim(JwtRegisteredClaimNames.Aud, _audience)
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]!));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_key));
+            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: _configuration["JwtSettings:Issuer"],
-                audience: _configuration["JwtSettings:Audience"],
+                issuer: _issuer,
+                audience: _audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddDays(1),
-                signingCredentials: creds);
+                expires: DateTime.UtcNow.AddMinutes(_expiresInMinutes),
+                signingCredentials: credentials
+            );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }

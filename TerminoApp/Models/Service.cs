@@ -1,4 +1,5 @@
 using TerminoApp.Models;
+using System.Collections.Generic;
 
 namespace TerminoApp.Models
 {
@@ -11,6 +12,8 @@ namespace TerminoApp.Models
         public string WorkingHours { get; set; } = default!;
         public int AdminId { get; set; }
         public User Admin { get; set; } = null!;
+        public int DurationInMinutes { get; set; }
+        public List<Reservation> Reservations { get; set; }
         //public User? Admin { get; set; }
     }
 }

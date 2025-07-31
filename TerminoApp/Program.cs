@@ -8,7 +8,7 @@ using TerminoApp.GraphQL;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using TerminoApp.Services; // ✅ OVO DODAJ
+using TerminoApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,7 +31,9 @@ builder.Services.AddAuthentication("Bearer")
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(jwtSettings["Key"]!)),
-            ValidateLifetime = true
+            ValidateLifetime = true,
+            NameClaimType = "email",
+            RoleClaimType = "role"
         };
     });
 
@@ -39,16 +41,14 @@ builder.Services.AddAuthorization();
 
 builder.Services
     .AddGraphQLServer()
-    .AddQueryType<Query>()
-    .AddMutationType<Mutation>()
-    .AddFiltering()
-    .AddSorting()
-    .ModifyRequestOptions(opt => opt.IncludeExceptionDetails = true); // debugging
+    .AddQueryType(d => d.Name("Query"))
+    .AddType<UserQueries>()  // ✅ tu je problem
+    .AddMutationType<Mutation>();
 
 var app = builder.Build();
 
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapGraphQL();
+app.UseAuthentication(); // ⬅️ omogućuje čitanje tokena iz headera
+app.UseAuthorization();  // ⬅️ omogućuje provjeru prava korisnika
+app.MapGraphQL();        // ⬅️ GraphQL endpoint se mapira nakon toga
 
 app.Run();
