@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TerminoApp.Data;
@@ -11,9 +12,11 @@ using TerminoApp.Data;
 namespace TerminoApp.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250803134900_ChangeAdminIdToStringInUnavailableDay")]
+    partial class ChangeAdminIdToStringInUnavailableDay
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -89,7 +92,11 @@ namespace TerminoApp.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AdminId")
+                    b.Property<string>("AdminId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("AdminId1")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("Date")
@@ -97,7 +104,7 @@ namespace TerminoApp.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AdminId");
+                    b.HasIndex("AdminId1");
 
                     b.ToTable("UnavailableDays");
                 });
@@ -169,7 +176,7 @@ namespace TerminoApp.Migrations
                 {
                     b.HasOne("TerminoApp.Models.User", "Admin")
                         .WithMany()
-                        .HasForeignKey("AdminId")
+                        .HasForeignKey("AdminId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

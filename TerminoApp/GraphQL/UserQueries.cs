@@ -21,5 +21,21 @@ namespace TerminoApp.GraphQL
                 .Where(u => u.Role == role)
                 .ToListAsync();
         }
+
+        public async Task<List<Service>> GetServicesByAdmin(
+            string adminId,
+            [Service] IDbContextFactory<AppDbContext> dbContextFactory)
+        {
+            await using var context = await dbContextFactory.CreateDbContextAsync();
+
+            if (!int.TryParse(adminId, out var adminIdInt))
+            {
+                return new List<Service>();
+            }
+
+            return await context.Services
+                .Where(s => s.AdminId == adminIdInt)
+                .ToListAsync();
+        }
     }
 }

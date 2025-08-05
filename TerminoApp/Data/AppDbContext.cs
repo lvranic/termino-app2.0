@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TerminoApp.Models;
+using System;
 
 namespace TerminoApp.Data
 {
@@ -8,6 +9,7 @@ namespace TerminoApp.Data
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
         {
+            Console.WriteLine("✅ AppDbContext je uspješno instanciran.");
         }
 
         public DbSet<User> Users { get; set; } = default!;
@@ -19,12 +21,17 @@ namespace TerminoApp.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Veza između Service i Admin (User)
             modelBuilder.Entity<Service>()
                 .HasOne(s => s.Admin)
                 .WithMany()
                 .HasForeignKey(s => s.AdminId)
-                .OnDelete(DeleteBehavior.Restrict); // Ili .Cascade prema potrebi
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<UnavailableDay>()
+                .HasOne(ud => ud.Admin)
+                .WithMany()
+                .HasForeignKey(ud => ud.AdminId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

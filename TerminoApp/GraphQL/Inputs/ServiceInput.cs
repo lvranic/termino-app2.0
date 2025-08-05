@@ -9,7 +9,7 @@ namespace TerminoApp.GraphQL.Inputs
         public string Description { get; set; } = default!;
         public string Address { get; set; } = default!;
         public string WorkingHours { get; set; } = default!;
-        public int AdminId { get; set; }
+        public int AdminId { get; set; } // ✅ int
         public int DurationInMinutes { get; set; }
     }
 }

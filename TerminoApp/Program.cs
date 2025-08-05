@@ -1,3 +1,4 @@
+using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -12,12 +13,21 @@ using TerminoApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Omogućavamo pristup kontekstu HTTP zahtjeva
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<JwtService>(); // ✅ scoped je bolji izbor
 
+// Registriramo JWT servis
+builder.Services.AddScoped<JwtService>();
+
+// VAŽNO: Registriramo PooledDbContextFactory jer ga koristiš u Mutation.cs
 builder.Services.AddPooledDbContextFactory<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
+    Console.WriteLine($"🔌 Connection string: {connStr}");
+    options.UseNpgsql(connStr);
+});
 
+// JWT autentikacija
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
     {
@@ -39,16 +49,18 @@ builder.Services.AddAuthentication("Bearer")
 
 builder.Services.AddAuthorization();
 
+// GraphQL konfiguracija
 builder.Services
     .AddGraphQLServer()
-    .AddQueryType(d => d.Name("Query"))
-    .AddType<UserQueries>()  // ✅ tu je problem
+    .AddQueryType<Query>()
+    .AddType<UserQueries>()
+    .AddType<UnavailableDayQueries>()
     .AddMutationType<Mutation>();
 
 var app = builder.Build();
 
-app.UseAuthentication(); // ⬅️ omogućuje čitanje tokena iz headera
-app.UseAuthorization();  // ⬅️ omogućuje provjeru prava korisnika
-app.MapGraphQL();        // ⬅️ GraphQL endpoint se mapira nakon toga
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapGraphQL();
 
 app.Run();
