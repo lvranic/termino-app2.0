@@ -6,6 +6,7 @@ using HotChocolate.Types;
 using TerminoApp.Data;
 using TerminoApp.Models;
 using TerminoApp.Services;
+using TerminoApp.GraphQL.Inputs;
 
 namespace TerminoApp.GraphQL
 {
@@ -58,6 +59,48 @@ namespace TerminoApp.GraphQL
                 Console.WriteLine("❗ CATCH blok — greška u login:");
                 Console.WriteLine($"💥 Poruka: {ex.Message}");
                 Console.WriteLine($"📛 StackTrace: {ex.StackTrace}");
+                throw;
+            }
+        }
+
+        [GraphQLName("addReservation")]
+        public async Task<Reservation> CreateReservation(
+            [GraphQLNonNullType] ReservationInput input,
+            [Service] IDbContextFactory<AppDbContext> dbContextFactory)
+        {
+            Console.WriteLine("🟢 POZVANA MUTACIJA addReservation");
+
+            try
+            {
+                Console.WriteLine($"➡️ UserId: {input.UserId}");
+                Console.WriteLine($"➡️ ServiceId: {input.ServiceId}");
+                Console.WriteLine($"➡️ Date: {input.Date}");
+                Console.WriteLine($"➡️ Time: {input.Time}");
+                Console.WriteLine($"➡️ Hour: {input.Hour}");
+                Console.WriteLine($"➡️ DurationMinutes: {input.DurationMinutes}");
+
+                await using var context = await dbContextFactory.CreateDbContextAsync();
+
+                var reservation = new Reservation
+                {
+                    UserId = input.UserId!,
+                    ServiceId = input.ServiceId,
+                    Time = input.Time,
+                    Hour = input.Hour,
+                    DurationMinutes = input.DurationMinutes,
+                    Date = input.Date
+                };
+
+                context.Reservations.Add(reservation);
+                await context.SaveChangesAsync();
+
+                Console.WriteLine("✅ Rezervacija uspješno spremljena.");
+                return reservation;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ GREŠKA: {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
                 throw;
             }
         }

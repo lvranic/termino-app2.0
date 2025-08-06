@@ -1,9 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.Linq; // ✅ DODANO ZA LINQ
+using System.Threading.Tasks;
 using TerminoApp.Data;
 using TerminoApp.Models;
 using HotChocolate;
 using HotChocolate.Types;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 
 #nullable enable
@@ -59,6 +61,28 @@ namespace TerminoApp.GraphQL
             return await context.Services
                 .Include(s => s.Admin)
                 .FirstOrDefaultAsync(s => s.Id == intId);
+        }
+
+        [GraphQLName("reservationsByAdmin")]
+        public async Task<List<Reservation>> GetReservationsByAdmin(
+            string adminId,
+            DateTime date,
+            [Service] IDbContextFactory<AppDbContext> contextFactory)
+        {
+            using var context = contextFactory.CreateDbContext();
+
+            if (!int.TryParse(adminId, out var adminIdInt))
+            {
+                throw new ArgumentException("adminId mora biti cijeli broj.");
+            }
+
+            return await context.Reservations
+                .Include(r => r.Service)
+                .AsQueryable() // ✅ DODANO kako bi .Where radio
+                .Where(r =>
+                    r.Service.AdminId == adminIdInt &&
+                    r.Date.Date == date.Date)
+                .ToListAsync();
         }
     }
 }
